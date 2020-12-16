@@ -7,8 +7,10 @@ services:
     command: postgresql:5432
 
   postgresql:
-    image: postgres:10.5
+    image: postgres:13.1
     container_name: postgresql
+    volumes:
+      - pgsql-data:/var/lib/postgresql/data
     ports:
       - 5432:5432
     environment:
@@ -28,17 +30,17 @@ services:
     depends_on:
       - postgresql
       - waitfordb
-    volumes:
-      - ${CREDENTIALS_PATH}:/opt/application_default_credentials.json
     environment:
       DB_URI: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgresql:5432/mlflow-db
-      GCP_STORAGE_BUCKET: "${GCP_STORAGE_BUCKET}"
       VIRTUAL_HOST: ${HOST}
       VIRTUAL_PORT: 80
       LETSENCRYPT_HOST: ${HOST}
-      LETSENCRYPT_EMAIL: example@gmail.com
-      GOOGLE_APPLICATION_CREDENTIALS: /opt/application_default_credentials.json
-      GCLOUD_PROJECT: ${GCLOUD_PROJECT}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_TOKEN}
+      AWS_SECRET_ACCESS_KEY: ${S3_ACCESS_SECRET}
+      MLFLOW_S3_ENDPOINT_URL: ${S3_ENDPOINT_URI}
+      AWS_DEFAULT_REGION: us-east
+      S3_BUCKET: ${S3_BUCKET}
 
   nginx-proxy:
     image: jwilder/nginx-proxy
@@ -55,7 +57,7 @@ services:
       - certs:/etc/nginx/certs:ro
       - /var/run/docker.sock:/tmp/docker.sock:ro
       - conf:/etc/nginx/conf.d
-    environment: 
+    environment:
       DEFAULT_HOST: ${HOST}
       DHPARAM_GENERATION: "false"
       HTTPS_METHOD: noredirect
@@ -85,3 +87,5 @@ volumes:
   vhost:
   dhparam:
   conf:
+  artifacts:
+  pgsql-data:
